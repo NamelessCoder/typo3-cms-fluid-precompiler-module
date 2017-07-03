@@ -1,0 +1,15 @@
+{
+    "name": "namelesscoder/typo3-cms-fluid-precompiler-module",
+    "type": "typo3-cms-extension",
+    "require": {
+        "typo3/cms": "^8.7"
+    },
+    "autoload": {
+        "psr-4": {
+            "NamelessCoder\\CmsFluidPrecompilerModule\\": "Classes/"
+        }
+    },
+    "replace": {
+        "cms_fluid_precompiler_module": "self.version"
+    }
+}

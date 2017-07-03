@@ -1,0 +1,5 @@
+  # cat=basic/enable; type=boolean; label=Enable BE module: Toggle this to enable or disable the BE module which allows compiling and inspecting Fluid template performance.
+backendModule = 1
+
+  # cat=basic/enable; type=boolean; label=Cache menu item: Toggle this to enable or disable the extra cache menu item that allows compiling all templates.
+cacheMenuItem = 1

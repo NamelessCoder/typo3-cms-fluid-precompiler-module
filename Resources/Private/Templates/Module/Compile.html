@@ -1,0 +1,281 @@
+{namespace fpc=NamelessCoder\CmsFluidPrecompilerModule\ViewHelpers}
+
+<f:layout name="Backend" />
+
+<f:section name="ButtonsLeft">
+
+</f:section>
+
+<f:section name="FunctionsLeft">
+    {csh -> f:format.raw()}
+</f:section>
+
+<f:section name="Content">
+    <div class="pull-right">
+        <f:if condition="{templateFile}">
+            <f:then>
+                <f:link.action action="compile" arguments="{extensionKey: extensionKey}" class="btn btn-default">back to {extensionKey}</f:link.action>
+            </f:then>
+            <f:else if="{extensionKey}">
+                <f:link.action action="compile" class="btn btn-default">back</f:link.action>
+            </f:else>
+        </f:if>
+        <f:link.action action="compile" arguments="{extensionKey: extensionKey, verbose: verbose, templateFile: templateFile}" class="btn btn-primary">reload</f:link.action>
+    </div>
+    <h1>{f:translate(key: 'header.compile')}</h1>
+    <f:if condition="{templateFile}">
+        <f:then>
+            <f:render section="SingleTemplate" arguments="{_all}" />
+        </f:then>
+        <f:else>
+            <f:if condition="{extensionKey}">
+                <f:then>
+                    <f:render section="SingleExtension" arguments="{_all}" />
+                </f:then>
+                <f:else>
+                    <f:render section="AllTemplates" arguments="{_all}" />
+                </f:else>
+            </f:if>
+        </f:else>
+    </f:if>
+</f:section>
+
+<f:section name="SingleExtension">
+    <f:render section="TemplateList" arguments="{extensionResults: '{results.{extensionKey}}', template: templateFile, verbose: verbose, extensionKey: extensionKey}" />
+</f:section>
+
+<f:section name="SingleTemplate">
+    <fpc:extendedTemplateInfo template="{templateFile}" extensionKey="{extensionKey}">
+        <f:if condition="{result.failure}">
+            <div class="alert alert-{info.efficiency -> fpc:efficiencyClass()}">
+                <div class="alert-title">Compiling/parsing failure</div>
+                <f:if condition="{result.failure}">
+                    <p>{result.failure}</p>
+                    <div class="alert-body">
+                        <ul>
+                            <f:for each="{result.mitigations}" as="mitigation">
+                                <li>
+                                    {mitigation -> f:format.raw()}
+                                </li>
+                            </f:for>
+                        </ul>
+                    </div>
+                </f:if>
+            </div>
+        </f:if>
+        <table class="table table-bordered table-hover">
+            <tr>
+                <td>Template</td>
+                <td>
+                    {templateFile -> fpc:truncateFilename()}
+                </td>
+            </tr>
+            <tr>
+                <td class="col-sm-3 col-md-2">Overall efficiency</td>
+                <td>
+                    <p class="label label-{info.efficiency -> fpc:efficiencyClass()} lead">
+                        <f:if condition="{info.efficiency} < 0" then="-&#x221e;" else="{info.efficiency -> f:format.number(decimals: 1)}" />
+                    </p>
+                </td>
+            </tr>
+            <f:if condition="{info.layoutName}">
+                <tr>
+                    <td>Layout</td>
+                    <td>
+                        <fpc:extendedTemplateInfo template="{info.layoutFilename}" extensionKey="{extensionKey}" as="layoutInfo">
+                            <f:render section="TemplateLink" arguments="{template: info.layoutFilename, verbose: verbose, extensionKey: extensionKey, info: layoutInfo, paths: layoutInfo.context.templatePaths}" />
+                        </fpc:extendedTemplateInfo>
+                    </td>
+                </tr>
+            </f:if>
+            <f:if condition="{info.sections -> f:count()}">
+                <tr>
+                    <td>Sections</td>
+                    <td>
+                        <ol>
+                            <f:for each="{info.sections}" as="sectionName">
+                                <li>{sectionName}</li>
+                            </f:for>
+                        </ol>
+                    </td>
+                </tr>
+            </f:if>
+
+        </table>
+        <table class="table table-bordered">
+            <thead>
+                <th class="col-sm-3 col-md-2">Namespace</th>
+                <th>PHP namespace lookups (wildcard <code>*</code> or pattern <code>xyz*</code> means ignored)</th>
+            </thead>
+            <f:for each="{info.context.viewHelperResolver.namespaces}" as="namespaces" key="alias">
+                <tr>
+                    <td>{alias}</td>
+                    <td>
+                        <f:for each="{namespaces as array}" as="namespace" iteration="iteration">
+                            {namespace}<f:if condition="!{iteration.isLast}" then=" + " />
+                        </f:for>
+                    </td>
+                </tr>
+            </f:for>
+        </table>
+        <f:if condition="{info.fanouts -> f:count()}">
+            <table class="table table-striped table-bordered">
+                <thead>
+                    <th class="col-sm-3 col-md-2">Rendered partial</th>
+                    <th class="col-sm-3 col-md-2">Section</th>
+                    <th>Argument names/types</th>
+                </thead>
+                <f:for each="{info.fanouts}" as="fanout">
+                    <tr>
+                        <td>
+                            <f:link.action action="compile" arguments="{extensionKey: extensionKey, templateFile: fanout.filename, verbose: verbose}">
+                                {fanout.partial}
+                            </f:link.action>
+                        </td>
+                        <td>{fanout.section}</td>
+                        <td>
+                            <f:if condition="{fanout.arguments -> f:count()}">
+                                <f:else>
+                                    None
+                                </f:else>
+                                <f:then>
+                                    <table class="table table-bordered">
+                                        <thead>
+                                            <th>Argument</th>
+                                            <th>Data type</th>
+                                            <th>Source of value</th>
+                                        </thead>
+                                        <f:for each="{fanout.arguments}" as="argument" key="argumentName">
+                                            <tr>
+                                                <td>{argumentName}</td>
+                                                <td>{argument.type}</td>
+                                                <td><code>{argument.source}</code></td>
+                                            </tr>
+                                        </f:for>
+                                    </table>
+                                </f:then>
+                            </f:if>
+                        </td>
+                    </tr>
+                </f:for>
+            </table>
+        </f:if>
+        <f:if condition="{info.helpers -> f:count()}">
+            <table class="table table-striped table-bordered table-hover">
+                <thead>
+                    <th>ViewHelper</th>
+                    <th>Escaped</th>
+                    <th>Usages</th>
+                    <th>Efficiency</th>
+                </thead>
+                <f:for each="{info.helpers}" as="helper" key="class">
+                    <tr>
+                        <td>{class}</td>
+                        <td>{f:if(condition: helper.escaped, then: 'yes', else: 'no')}</td>
+                        <td>{helper.usages}</td>
+                        <td class="{helper.efficiency -> fpc:efficiencyClass()}"><f:if condition="{helper.efficiency} < 0" then="-&#x221e;" else="{helper.efficiency}" /></td>
+                    </tr>
+                </f:for>
+                <tfoot>
+                    <tr>
+                        <td colspan="4">
+                            Efficiency legend:
+                                <span class="label label-success">=2.0 perfectly compiling</span>
+                                <span class="label label-info">&gt;=1.0 good, static compiling</span>
+                                <span class="label label-warning">&lt;1.0 okay, default invocation</span>
+                                <span class="label label-danger">&lt;0.0 uncompilable</span>
+                        </td>
+                    </tr>
+                </tfoot>
+            </table>
+            </ul>
+        </f:if>
+        <p>
+            <button data-toggle="collapse" data-target="#source" class="btn btn-info">Show source code</button>
+        </p>
+        <div id="source" class="collapse">
+            <pre>{info.source}</pre>
+        </div>
+    </fpc:extendedTemplateInfo>
+</f:section>
+
+<f:section name="AllTemplates">
+    <table class="table table-striped table-bordered table-hover">
+        <thead>
+            <tr>
+                <th class="col-xs-3">Extension key</th>
+                <th class="col-xs-1">#</th>
+                <th class="col-xs-1"></th>
+                <f:if condition="{verbose}">
+                    <th>Status</th>
+                </f:if>
+            </tr>
+        </thead>
+        <f:for each="{results}" as="extensionResults" key="extensionKey">
+            <tr class="{f:if(condition: extensionResults.uncompilable, then: 'warning')}">
+                <td>
+                    <f:link.action action="compile" arguments="{extensionKey: extensionKey, verbose: 1}">{extensionKey}</f:link.action>
+                </td>
+                <td>
+                    {extensionResults.results -> f:count()}
+                </td>
+                <td>
+                    <f:if condition="{extensionResults.uncompilable}">
+                        <f:else>
+                            <span class="icon fa fa-icon fa-check text-success"></span>
+                        </f:else>
+                        <f:then>
+                            <span class="icon fa fa-icon fa-exclamation-triangle text-danger"></span>
+                        </f:then>
+                    </f:if>
+                </td>
+                <f:if condition="{verbose}">
+                    <td>
+                        <f:render section="TemplateList" arguments="{_all}" />
+                    </td>
+                </f:if>
+            </tr>
+        </f:for>
+    </table>
+</f:section>
+
+<f:section name="UncompilableTemplates">
+    <ol>
+        <f:for each="{templates}" as="template" key="templateFilename">
+            <f:if condition="{template.compilable} == 0">
+                <li>
+                    <f:link.action action="compile" arguments="{extensionKey: extensionKey, templateFile: templateFilename, verbose: verbose}">
+                        {templateFilename -> fpc:truncateFilename()}
+                    </f:link.action>
+                    <ul>
+                        <li>{template.failure -> f:format.raw()}</li>
+                        <f:for each="{template.mitigations}" as="mitigation">
+                            <li>
+                                {mitigation -> f:format.raw()}
+                            </li>
+                        </f:for>
+                    </ul>
+                </li>
+            </f:if>
+        </f:for>
+    </ol>
+</f:section>
+
+<f:section name="TemplateList">
+    <f:for each="{extensionResults.results}" key="template" as="basicInfo">
+        <ul class="list-unstyled">
+            <fpc:extendedTemplateInfo template="{template}" extensionKey="{extensionKey}">
+                <li>
+                    <f:render section="TemplateLink" arguments="{_all}" />
+                </li>
+            </fpc:extendedTemplateInfo>
+        </ul>
+    </f:for>
+</f:section>
+
+<f:section name="TemplateLink">
+    <span class="label label-{info.efficiency -> fpc:efficiencyClass()}"><f:if condition="{info.efficiency} < 0" then="-&#x221e;" else="{info.efficiency -> f:format.number(decimals: 1)}" /></span>
+    <f:link.action action="compile" arguments="{extensionKey: extensionKey, templateFile: template, verbose: verbose}">
+        {template -> fpc:truncateFilename(paths: paths)}
+    </f:link.action>
+</f:section>

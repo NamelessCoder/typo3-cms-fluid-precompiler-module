@@ -1,0 +1,82 @@
+{namespace v=FluidTYPO3\Vhs\ViewHelpers}
+
+<f:layout name="Backend" />
+
+<f:section name="ButtonsLeft">
+
+</f:section>
+
+<f:section name="FunctionsLeft">
+    {csh -> f:format.raw()}
+</f:section>
+
+<f:section name="Content">
+    <f:form action="compile" class="form form-horizontal">
+        <div class="form-group">
+            <div class="col-xs-10 col-xs-offset-2">
+                <h1>{f:translate(key: 'header.index')}</h1>
+                <p class="lead">
+                    Use this module to compile all Fluid templates in one or all extensions.
+                </p>
+                <f:if condition="{cacheAdvise}">
+                    <div class="alert alert-danger">
+                        <div class="alert-title">
+                            <h4>Cache lifetime is very low</h4>
+                        </div>
+                        <div class="alert-body">
+                            <p>
+                                The <code>fluid_template</code> cache lifetime is very low ({cacheAdvise} seconds). This will
+                                negatively impact performance because your templates will be re-compiled too frequently.
+                            </p>
+                            <p>
+                                Increasing this lifetime can be done by setting, in <code>AdditionalConfiguration.php</code>
+                                of the site or <code>ext_localconf.php</code> of an installed extension:
+                            </p>
+                            <pre class="help-block">$GLOBALS['TYPO3_CONF_VARS']['SYS']['caching']['cacheConfigurations']['fluid_template']['options']['defaultLifetime'] = 31536000;</pre>
+                            <p>
+                                This increases the lifetime to one year). Note that since Fluid templates are cached along with a checksum,
+                                any changes to the template file automatically updates the cache (by creating a new entry) so an extremely
+                                long lifetime does not pose a problem even when using templates which change in production.
+                            </p>
+                            <p>
+                                <em>This warning is displayed if the cache lifetime is less than 86400 seconds (one day).</em>
+                            </p>
+                        </div>
+                    </div>
+                </f:if>
+                <p>
+                    Enabling verbose mode presents detailed information about each template, such as the number of ViewHelpers it uses.
+                    Verbose mode comes at a cost so be careful not to overuse it on production. It is meant as a help for
+                    development mode or for tracking possible issues with performance.
+                </p>
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="control-label col-xs-2" for="extensionkey">Extension key</label>
+            <div class="col-xs-10">
+                <f:form.select name="extensionKey" class="form-control col-xs-6" id="extensionkey">
+                    <f:form.select.option value="All">All</f:form.select.option>
+                    <f:for each="{extensionKeys}" as="extensionKey">
+                        <f:form.select.option value="{extensionKey}">{extensionKey}</f:form.select.option>
+                    </f:for>
+                </f:form.select>
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="control-label col-xs-2" for="verbose">Verbose mode</label>
+            <div class="col-xs-10">
+                <div class="checkbox">
+                    <label>
+                        <f:form.checkbox name="verbose" value="1" id="verbose" />
+                        Enable additional output <span class="text-danger">(Warning! Increases memory and CPU usage drastically for the compiling run)</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+        <div class="form-group">
+            <div class="col-xs-10 col-xs-offset-2">
+                <f:form.submit class="btn btn-primary" value="Compile now" />
+            </div>
+        </div>
+    </f:form>
+</f:section>
