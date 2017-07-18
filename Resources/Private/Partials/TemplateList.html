@@ -1,0 +1,60 @@
+{namespace fpc=NamelessCoder\CmsFluidPrecompilerModule\ViewHelpers}
+
+<f:section name="AllTemplates">
+    <table class="table table-striped table-bordered table-hover">
+        <thead>
+        <tr>
+            <th class="col-xs-3">Extension key</th>
+            <th class="col-xs-1">#</th>
+            <th class="col-xs-1"></th>
+            <f:if condition="{verbose}">
+                <th>Status</th>
+            </f:if>
+        </tr>
+        </thead>
+        <f:for each="{results}" as="extensionResults" key="extensionKey">
+            <tr class="{f:if(condition: extensionResults.uncompilable, then: 'warning')}">
+                <td>
+                    <f:link.action action="compile" arguments="{extensionKey: extensionKey, verbose: 1}">{extensionKey}</f:link.action>
+                </td>
+                <td>
+                    {extensionResults.results -> f:count()}
+                </td>
+                <td>
+                    <f:if condition="{extensionResults.uncompilable}">
+                        <f:else>
+                            <span class="icon fa fa-icon fa-check text-success"></span>
+                        </f:else>
+                        <f:then>
+                            <span class="icon fa fa-icon fa-exclamation-triangle text-danger"></span>
+                        </f:then>
+                    </f:if>
+                </td>
+                <f:if condition="{verbose}">
+                    <td>
+                        <f:render section="TemplateList" arguments="{_all}" />
+                    </td>
+                </f:if>
+            </tr>
+        </f:for>
+    </table>
+</f:section>
+
+<f:section name="TemplateList">
+    <f:for each="{extensionResults.results}" key="template" as="basicInfo">
+        <ul class="list-unstyled">
+            <fpc:extendedTemplateInfo template="{template}" extensionKey="{extensionKey}">
+                <li>
+                    <f:render section="TemplateLink" arguments="{_all}" />
+                </li>
+            </fpc:extendedTemplateInfo>
+        </ul>
+    </f:for>
+</f:section>
+
+<f:section name="TemplateLink">
+    <span class="label label-{info.efficiency -> fpc:efficiencyClass()}"><f:if condition="{info.efficiency} < 0" then="-&#x221e;" else="{info.efficiency -> f:format.number(decimals: 1)}" /></span>
+    <f:link.action action="compile" arguments="{extensionKey: extensionKey, templateFile: template, verbose: verbose}">
+        {template -> fpc:truncateFilename(paths: paths)}
+    </f:link.action>
+</f:section>

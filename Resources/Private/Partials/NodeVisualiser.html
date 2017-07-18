@@ -1,0 +1,154 @@
+{namespace fpc=NamelessCoder\CmsFluidPrecompilerModule\ViewHelpers}
+
+{info.rootNode -> fpc:nodeMaxIndent() -> f:variable(name: 'maxIndent')}
+
+
+<f:render section="Table" arguments="{node: node, info: info, id: 'root'}" />
+
+<f:section name="Table">
+    <table class="table table-bordered table-striped table-hover">
+        <thead>
+            <th class="col-sm-4 col-xs-2">
+                <a href="javascript:;" id="expandall" title="Expand all" rel="tooltip"><span class="icon fa fa-plus-square"></span></a>
+                <a href="javascript:;" id="collapseall" title="Collapse all" rel="tooltip" class="hidden"><span class="icon fa fa-minus-square"></span></a>
+                Node
+            </th>
+            <th>Details</th>
+        </thead>
+        <tr>
+            <f:render section="Row" arguments="{node: info.rootNode, id: id, showKeys: showKeys}" />
+        </tr>
+        <tfoot>
+            <tr>
+                <td colspan="2">
+                    ViewHelper argument legend: <span class="label label-success">Specified, not default value</span> <span class="label label-info">Specified but redundant, has default value</span> <span class="label label-warning">Undeclared but handled</span> <span class="label label-danger">Undeclared and not handled, possible error</span>
+                </td>
+            </tr>
+        </tfoot>
+    </table>
+</f:section>
+
+<f:section name="Row">
+    <f:if condition="{offset} && {indent} > 0">
+        <f:for each="{offset -> fpc:arrayFill()}" as="void">
+            <td></td>
+        </f:for>
+    </f:if>
+            {node -> fpc:nodeShortName() -> f:variable(name: 'shortName')}
+            {node -> fpc:nodeId() -> f:variable(name: 'nodeId')}
+            <td style="{f:if(condition: indent, then: 'padding-left: {indent * 1.25}em;')}" class="text-monospace">
+                <f:if condition="{node.childNodes -> f:count()} || {node.internalArray -> f:count()}">
+                    <f:then>
+                        <a href="javascript:;" id="toggle-{nodeId}" class="expand-collapse text-nowrap" style="text-decoration: none !important;"><span class="fa fa-{f:if(condition: '{indent} > 0', then: 'plus-square', else: 'minus-square text-muted')}"></span>&nbsp;<f:render section="NodeName" arguments="{_all}" /></a>
+                    </f:then>
+                    <f:else>
+                        <div class="text-nowrap">
+                            <span class="fa fa-minus-square-o text-muted"></span> <f:render section="NodeName" arguments="{_all}" />
+                        </div>
+                    </f:else>
+                </f:if>
+            </td>
+            <td>
+                <f:render section="{shortName}" arguments="{_all}" optional="1">
+                    Unknown type: {node -> fpc:nodeShortName()}
+                </f:render>
+            </td>
+            <f:if condition="{node.childNodes -> f:count()}">
+                <f:variable name="key" value="foo" />
+                <f:for each="{node.childNodes}" as="childNode" key="{f:if(condition: '{node -> fpc:nodeShortName()} == \'ArrayNode\'', then: 'key')}">
+                    <tr class="childof-{nodeId} {f:if(condition: '{indent} > 0', then: 'hidden')}">
+                        <f:render section="Row" arguments="{node: childNode, indent: '{indent + 1}', id: nodeId, key: key, offset: offset}" />
+                    </tr>
+                </f:for>
+            </f:if>
+</f:section>
+
+<f:section name="NodeName">
+    <f:if condition="{shortName} == 'EscapingNode'">
+        <f:then>
+            {node.node -> fpc:nodeShortName()} <span class="text-primary">in EscapingNode</span>
+        </f:then>
+        <f:else>
+            {shortName}
+        </f:else>
+    </f:if>
+</f:section>
+
+<f:section name="ArrayNode">
+    <f:render section="ArrayNodeList" arguments="{array: node.internalArray}" />
+</f:section>
+
+<f:section name="RootNode"></f:section>
+
+<f:section name="TextNode">
+    <code>{node.text}</code>
+</f:section>
+
+<f:section name="BooleanNode">
+    <code>{node.stack -> f:format.json()}</code>
+</f:section>
+
+<f:section name="NumericNode">
+    <code>{node.value}</code>
+</f:section>
+
+<f:section name="EscapingNode">
+    <f:render section="{node.node -> fpc:nodeShortName()}" arguments="{node: node.node}" optional="1">
+        Unknown type: {node.node -> fpc:nodeShortName()}
+    </f:render>
+</f:section>
+
+<f:section name="ObjectAccessorNode">
+    <code><f:format.raw>{</f:format.raw>{node.objectPath}}</code>
+</f:section>
+
+<f:section name="ExpressionNodeInterface">
+    <fpc:nodeFullName>{node}</fpc:nodeFullName> expression <code>{node.expression}</code> with matches <f:for each="{node.matches}" as="match" iteration="iteration"><code>{match}</code><f:if condition="{iteration.isLast}" else=", " /></f:for>
+</f:section>
+
+<f:section name="ViewHelperNode">
+    <code>{node.viewHelperClassName}</code>
+    <f:if condition="{node.arguments -> f:count()}">
+        <a href="javascript:;" class="text-info" data-toggle="collapse" data-target="#arguments-{node -> fpc:nodeId()}">Show arguments</a>
+        <div class="collapse" id="arguments-{node -> fpc:nodeId()}">
+            <f:render section="ArrayNodeList" arguments="{array: node.arguments, parent: node}" />
+        </div>
+    </f:if>
+</f:section>
+
+<f:section name="ArrayNodeList">
+    <table class="table table-bordered table-striped table-hover">
+        <thead>
+            <th class="col-md-2 col-xs-4">Name</th>
+            <th>Type</th>
+            <th>Value</th>
+        </thead>
+        <f:for each="{array}" as="node" key="name">
+            <tr class="{fpc:nodeViewHelperArgumentClass(parent: parent, argument: name)}">
+                <td>{name}</td>
+                <fpc:isNode node="{node}">
+                    <f:then>
+                        <f:variable name="actualNode" value="{f:if(condition: '{node -> fpc:nodeShortName()} == \'RootNode\'', then: node.childNodes.0, else: node)}" />
+                        <f:render section="Row" arguments="{node: actualNode, id: 'node-{node -> fpc:nodeId()}', key: name, offset: 1}" />
+                    </f:then>
+                    <f:else>
+                        <td class="text-monospace">
+                            {node -> fpc:dataType()}
+                        </td>
+                        <td>
+                            <code>{node}</code>
+                        </td>
+                    </f:else>
+                </fpc:isNode>
+            </tr>
+        </f:for>
+    </table>
+</f:section>
+
+
+<f:section name="ValueDumpObjectAccessorNode"><f:format.raw>{</f:format.raw>{node.objectPath}}</f:section>
+<f:section name="ValueDumpRootNode">{f:render(section: 'ValueDump{node.childNodes.0 -> fpc:nodeShortName()}', arguments: {node: node.childNodes.0}, optional: 1, default: '{node.childNodes.0 -> fpc:nodeShortName()}???')}</f:section>
+<f:section name="ValueDumpBooleanNode">{node -> f:format.json()}</f:section>
+<f:section name="ValueDumpArrayNode">ARRAY</f:section>
+<f:section name="ValueDumpTextNode">{node.text}</f:section>
+<f:section name="ValueDumpNumericNode">{node.value}</f:section>

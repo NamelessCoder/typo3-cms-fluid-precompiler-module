@@ -84,6 +84,7 @@ class FluidPrecompilerService implements SingletonInterface
             'fanouts' => $this->collectRenderedPartialNames($parsedTemplate, $context),
             'sections' => $this->collectDefinedSectionNames($parsedTemplate, $context),
             'helpers' => $helpers,
+            'rootNode' => $parsedTemplate->getRootNode(),
             'efficiency' => $this->determineCompiledEfficiency($helpers)
         ];
     }
