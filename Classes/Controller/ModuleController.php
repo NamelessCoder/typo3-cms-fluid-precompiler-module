@@ -41,7 +41,9 @@ class ModuleController extends ActionController
                 $defaultLifetime
             );
         }
-        $this->view->assign('extensionKeys', ExtensionManagementUtility::getLoadedExtensionListArray());
+        $extensionKeys = ExtensionManagementUtility::getLoadedExtensionListArray();
+        sort($extensionKeys);
+        $this->view->assign('extensionKeys', $extensionKeys);
     }
 
     /**
