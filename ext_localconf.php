@@ -34,4 +34,6 @@ if ('BE' === TYPO3_MODE) {
         module.tx_cmsfluidprecompilermodule.view <= plugin.tx_cmsfluidprecompilermodule.view 
         '
     );
+
+    $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['extbase']['commandControllers'][$_EXTKEY] = \NamelessCoder\CmsFluidPrecompilerModule\Command\FluidPrecompileCommandController::class;
 }
