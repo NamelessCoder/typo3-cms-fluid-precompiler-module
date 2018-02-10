@@ -14,10 +14,14 @@ use TYPO3Fluid\Fluid\Core\Cache\FluidCacheWarmupResult;
 class FluidPrecompileCommandController extends CommandController
 {
     /**
+     * Precompile fluid templates
+     *
+     * (Pre-)compiles all fluid templates to static files of the given or all extension(s).
+     * 
      * @param string $extension extension key of which the fluid template should be compiled, leave empty to compile all
-     * @param bool $fail whether to fail or not fail when compiling failed (i.e. return with a non-zero exit code)
-     * @param bool $onlyFailed whether to show only failed templates
-     * @param int $limit limit of template files of each extension to show. Default shows all not compilable
+     * @param bool $fail fail with a non-zero return code if any template could not be compiled
+     * @param bool $onlyFailed show only failed fluid templates from compiling
+     * @param int $limit limit of template files of each extension shown
      * @throws \Exception
      */
     public function compileCommand($extension = null, $fail = true, $onlyFailed = true, $limit = null)
