@@ -3,7 +3,6 @@ namespace NamelessCoder\CmsFluidPrecompilerModule\Command;
 
 use NamelessCoder\CmsFluidPrecompilerModule\Service\FluidPrecompilerService;
 use Symfony\Component\Console\Helper\TableSeparator;
-use TYPO3\CMS\Core\Error\Exception;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Extbase\Mvc\Controller\CommandController;
 use TYPO3\CMS\Extbase\Object\ObjectManager;
@@ -19,7 +18,7 @@ class FluidPrecompileCommandController extends CommandController
      * @param bool $fail whether to fail or not fail when compiling failed (i.e. return with a non-zero exit code)
      * @param bool $onlyFailed whether to show only failed templates
      * @param int $limit limit of template files of each extension to show. Default shows all not compilable
-     * @throws Exception
+     * @throws \Exception
      */
     public function compileCommand($extension = null, $fail = true, $onlyFailed = true, $limit = null)
     {
@@ -27,7 +26,7 @@ class FluidPrecompileCommandController extends CommandController
 
         try {
             $result = $this->getPrecompilerService()->warmup($extension);
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             $result = [];
             $lastError = $e;
         }
@@ -69,7 +68,7 @@ class FluidPrecompileCommandController extends CommandController
         $uncompilable = array_sum($uncompilable);
 
         if ($uncompilable > 0) {
-            $lastError = new Exception(sprintf('Could not compile %d templates.', $uncompilable), 1518205183);
+            $lastError = new \Exception(sprintf('Could not compile %d templates.', $uncompilable), 1518205183);
         }
 
         if ($fail && null !== $lastError) {
