@@ -16,12 +16,12 @@ class FluidPrecompileCommandController extends CommandController
 {
     /**
      * @param string $extension extension key of which the fluid template should be compiled, leave empty to compile all
-     * @param bool $noFail whether to not fail when compiling failed (i.e. return with a non-zero exit code)
-     * @param bool $failed whether to show only failed templates
+     * @param bool $fail whether to fail or not fail when compiling failed (i.e. return with a non-zero exit code)
+     * @param bool $onlyFailed whether to show only failed templates
      * @param int $limit limit of template files of each extension to show. Default shows all not compilable
      * @throws Exception
      */
-    public function compileCommand($extension = null, $noFail = false, $failed = true, $limit = null)
+    public function compileCommand($extension = null, $fail = true, $onlyFailed = true, $limit = null)
     {
         $lastError = null;
 
@@ -35,7 +35,7 @@ class FluidPrecompileCommandController extends CommandController
         foreach ($result as $extensionKey => $extensionResult) {
             $templates = $extensionResult['results'];
 
-            if ($failed) {
+            if ($onlyFailed) {
                 $templates = array_filter($templates, function ($template) {
                     return false == $template[FluidCacheWarmupResult::RESULT_COMPILABLE];
                 });
@@ -72,9 +72,9 @@ class FluidPrecompileCommandController extends CommandController
             $lastError = new Exception(sprintf('Could not compile %d templates.', $uncompilable), 1518205183);
         }
 
-        if (!$noFail && null !== $lastError) {
+        if ($fail && null !== $lastError) {
             throw $lastError;
-        } elseif ($noFail) {
+        } elseif (!$fail) {
             $this->outputLine();
             $this->outputFormatted(
                 vsprintf(
