@@ -64,11 +64,13 @@ class FluidPrecompileCommandController extends CommandController
             );
         }
 
-        $uncompilable = array_column($result, 'uncompilable');
-        $uncompilable = array_sum($uncompilable);
+        if ($result) {
+            $uncompilable = array_column($result, 'uncompilable');
+            $uncompilable = array_sum($uncompilable);
 
-        if ($uncompilable > 0) {
-            $lastError = new \Exception(sprintf('Could not compile %d templates.', $uncompilable), 1518205183);
+            if ($uncompilable > 0) {
+                $lastError = new \Exception(sprintf('Could not compile %d templates.', $uncompilable), 1518205183);
+            }
         }
 
         if ($fail && null !== $lastError) {
