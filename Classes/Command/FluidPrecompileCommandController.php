@@ -7,6 +7,7 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Extbase\Mvc\Controller\CommandController;
 use TYPO3\CMS\Extbase\Object\ObjectManager;
 use TYPO3Fluid\Fluid\Core\Cache\FluidCacheWarmupResult;
+use TYPO3Fluid\Fluid\Core\Rendering\RenderingContextInterface;
 
 /**
  * Class FluidPrecompileCommandController
@@ -90,6 +91,118 @@ class FluidPrecompileCommandController extends CommandController
                 2
             );
             $this->outputLine();
+        }
+    }
+
+    /**
+     * Profile a Fluid template
+     *
+     * Profiles a given fluid template and outputs detailed information.
+     *
+     * @param string $extension extension key
+     * @param string $template path to the template
+     */
+    public function profileCommand($extension, $template)
+    {
+        $result = $this->getPrecompilerService()->profileTemplateFile($template, $extension);
+
+        // General information
+        $this->outputLine('General');
+        $rows = [
+            [
+                'name' => 'template',
+                'value' => $result['identifier']
+            ],
+            [
+                'name' => 'layoutName',
+                'value' => $result['layoutName']
+            ],
+            [
+                'name' => 'layoutFilename',
+                'value' => $result['layoutFilename']
+            ],
+            [
+                'name' => 'compilable',
+                'value' => $result['compilable']
+            ],
+            [
+                'name' => 'efficiency',
+                'value' => $result['efficiency']
+            ],
+            [
+                'name' => 'sections (' . count($result['sections']) . ')',
+                'value' => implode(", ", $result['sections'])
+            ],
+            [
+                'name' => 'nodes',
+                'value' => $result['nodes']
+            ]
+        ];
+
+        $this->output->outputTable($rows, ['Info', 'Value']);
+
+        $this->outputLine(PHP_EOL);
+
+        // Namespaces
+        $this->outputLine('Namespaces');
+        /** @var RenderingContextInterface $context */
+        $context = $result['context'];
+        $namespaces = $context->getViewHelperResolver()->getNamespaces();
+        $namespaces = array_map(function ($phpNamespaces) {
+            return implode(', ', $phpNamespaces);
+        }, $namespaces);
+
+        $rows = [];
+        foreach ($namespaces as $alias => $phpNamespaces) {
+            $rows[] = [
+                'alias' => $alias,
+                'namespaces' => $phpNamespaces
+            ];
+        }
+
+        $this->output->outputTable($rows, array_keys($rows[0]));
+
+        $this->outputLine(PHP_EOL);
+
+        // ViewHelpers
+        $this->outputLine('ViewHelpers');
+        if ($result['helpers']) {
+            $viewHelpers = $result['helpers'];
+
+            $rows = [];
+            foreach ($viewHelpers as $className => $helper) {
+                $rows[] = [
+                    'name' => $className,
+                    'escaped' => $helper['escaped'],
+                    'usages' => $helper['usages'],
+                    'efficiency' => $helper['efficiency']
+                ];
+            }
+
+            $this->output->outputTable($rows, array_keys($rows[0]));
+        }
+
+        $this->outputLine(PHP_EOL);
+
+        // Partials
+        $this->outputLine('Partials');
+        if ($result['fanouts']) {
+            foreach ($result['fanouts'] as $fanout) {
+                $this->outputLine("Partial: %s\nSection:%s", [$fanout['partial'], $fanout['section']]);
+
+                $rows = [];
+
+                foreach ($fanout['arguments'] as $argument => $argumentInfo) {
+                    $rows[] = [
+                        'name' => $argument,
+                        'type' => $argumentInfo['type'],
+                        'value' => $argumentInfo['source']
+                    ];
+                }
+
+                $this->output->outputTable($rows, array_keys($rows[0]));
+                $this->outputLine(PHP_EOL);
+            }
         }
     }
 
