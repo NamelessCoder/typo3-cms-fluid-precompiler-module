@@ -27,6 +27,19 @@ class FluidPrecompileCommandController extends CommandController
      */
     public function compileCommand($extension = null, $fail = true, $onlyFailed = true, $limit = null)
     {
+        if (set_error_handler(function() {})) {
+            $this->outputFormatted(
+                ""
+                . "\nIt seems like there is an error handler registered."
+                . "\nIn some cases this can prevent the precompiling to run properly."
+                . "\nAn ErrorHandler might raise an exception for a PHP Warning."
+                . "\n",
+                [],
+                2
+            );
+        }
+        restore_error_handler();
+
         $lastError = null;
 
         try {
