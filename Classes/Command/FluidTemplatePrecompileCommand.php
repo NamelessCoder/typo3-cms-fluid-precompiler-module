@@ -119,7 +119,7 @@ class FluidTemplatePrecompileCommand extends Command
                     foreach ($templateAttributes as $attributeName => $attributeValue) {
                         $templateRows[] = [
                             $attributeName,
-                            is_array($attributeValue) ? implode(PHP_EOL, $attributeValue) : $attributeValue
+                            is_array($attributeValue) ? implode(PHP_EOL, $attributeValue) : static::formatReadable($attributeValue)
                         ];
                     }
 
@@ -144,5 +144,20 @@ class FluidTemplatePrecompileCommand extends Command
         if ($fail && $uncompilable > 0) {
             throw new \Exception(sprintf('Could not compile %d templates.', $uncompilable), 1518205183);
         }
+    }
+
+    /**
+     * Formats the given input in a readable format
+     *
+     * @param mixed $data
+     * @return string
+     */
+    protected static function formatReadable($data)
+    {
+        if (is_bool($data)) {
+            $data = $data ? 'yes' : 'no';
+        }
+
+        return $data;
     }
 }
