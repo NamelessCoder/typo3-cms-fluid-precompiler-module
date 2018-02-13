@@ -7,6 +7,7 @@ use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Logger\ConsoleLogger;
+use Symfony\Component\Console\Output\Output;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 use TYPO3Fluid\Fluid\Core\Cache\FluidCacheWarmupResult;
@@ -41,13 +42,13 @@ class FluidTemplatePrecompileCommand extends Command
                 'show-only-failed',
                 null,
                 InputOption::VALUE_NONE,
-                'Show only failed fluid templates from compiling'
+                'Show only failed fluid templates from compiling. Only in conjunction with -v'
             )
             ->addOption(
                 'limit',
                 'l',
                 InputOption::VALUE_REQUIRED,
-                'Limit of template files of each extension shown',
+                'Limit of template files of each extension shown. Only in conjunction with -v',
                 5
             );
     }
@@ -75,66 +76,61 @@ class FluidTemplatePrecompileCommand extends Command
         $onlyFailed = $input->getOption('show-only-failed');
         $limit = $input->getOption('limit');
 
-        $lastError = null;
+        $result = $this->getPrecompilerService()->warmup($extension);
 
-        try {
-            $result = $this->getPrecompilerService()->warmup($extension);
-        } catch (\Exception $e) {
-            $result = [];
-            $lastError = $e;
+        // General information
+        $templatesCount = 0;
+        foreach ($result as $extensionResult) {
+            $templatesCount += count($extensionResult);
         }
 
-        foreach ($result as $extensionKey => $extensionResult) {
-            $templates = $extensionResult['results'];
+        $uncompilable = array_column($result, 'uncompilable');
+        $uncompilable = array_sum($uncompilable);
 
-            if ($onlyFailed) {
-                $templates = array_filter($templates, function ($template) {
-                    return false == $template[FluidCacheWarmupResult::RESULT_COMPILABLE];
-                });
-            }
+        $outputHelper->section('General');
+        $outputHelper->text(vsprintf('Compiled %d extension(s) with %d template(s) in total.', [count($result), $templatesCount]));
+        $outputHelper->text(vsprintf('%d template(s) could not be compiled.', [$uncompilable]));
 
-            $templates = array_slice($templates, 0, $limit);
+        // Additional information
+        if ($output->isVerbose()) {
+            foreach ($result as $extensionKey => $extensionResult) {
+                $templates = $extensionResult['results'];
 
-            $templateRows = [];
-            foreach ($templates as $templateName => $templateAttributes) {
-                $templateRows[] = ['Template', $templateName];
-
-                foreach ($templateAttributes as $attributeName => $attributeValue) {
-                    $templateRows[] = [
-                        $attributeName,
-                        is_array($attributeValue) ? implode(PHP_EOL, $attributeValue) : $attributeValue
-                    ];
+                if ($onlyFailed) {
+                    $templates = array_filter($templates, function ($template) {
+                        return false == $template[FluidCacheWarmupResult::RESULT_COMPILABLE];
+                    });
                 }
 
-                $templateRows[] = new TableSeparator();
+                $templates = array_slice($templates, 0, $limit);
+
+                $templateRows = [];
+                foreach ($templates as $templateName => $templateAttributes) {
+                    $templateRows[] = ['Template', $templateName];
+
+                    foreach ($templateAttributes as $attributeName => $attributeValue) {
+                        $templateRows[] = [
+                            $attributeName,
+                            is_array($attributeValue) ? implode(PHP_EOL, $attributeValue) : $attributeValue
+                        ];
+                    }
+
+                    $templateRows[] = new TableSeparator();
+                }
+
+                array_pop($templateRows);
+
+                $outputHelper->section(sprintf('Extension: %s (%d uncompilable of %d)', $extensionKey, $extensionResult['uncompilable'], count($templates)));
+
+                $outputHelper->table(
+                    [],
+                    $templateRows
+                );
             }
-
-            array_pop($templateRows);
-
-            $outputHelper->table(
-                ['Compile Results', vsprintf('Extension %s (%d uncompilable). Showing %d.', [$extensionKey, $extensionResult['uncompilable'], count($templates)])],
-                $templateRows
-            );
         }
 
-        if ($result) {
-            $uncompilable = array_column($result, 'uncompilable');
-            $uncompilable = array_sum($uncompilable);
-
-            if ($uncompilable > 0) {
-                $lastError = new \Exception(sprintf('Could not compile %d templates.', $uncompilable), 1518205183);
-            }
-        }
-
-        if ($fail && null !== $lastError) {
-            throw $lastError;
-        } elseif (!$fail) {
-            $outputHelper->error(
-                vsprintf(
-                    "Got an error (because --no-fail is set, the return code equals zero)\nError: %s\nReason(%d): %s",
-                    [get_class($lastError), $lastError->getCode(), $lastError->getMessage()]
-                )
-            );
+        if ($fail && $uncompilable > 0) {
+            throw new \Exception(sprintf('Could not compile %d templates.', $uncompilable), 1518205183);
         }
     }
 }
