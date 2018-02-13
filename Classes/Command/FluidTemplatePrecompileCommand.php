@@ -50,6 +50,12 @@ class FluidTemplatePrecompileCommand extends Command
                 InputOption::VALUE_REQUIRED,
                 'Limit of template files of each extension shown. Only in conjunction with -v',
                 5
+            )
+            ->addOption(
+                'disable-error-handler',
+                null,
+                InputOption::VALUE_NONE,
+                'Temporary disable any registered error handler for compiling'
             );
     }
 
@@ -60,21 +66,23 @@ class FluidTemplatePrecompileCommand extends Command
     {
         $outputHelper = new SymfonyStyle($input, $output);
 
-        // Test exception handlers
-        if (set_error_handler(function() {})) {
-            $outputHelper->warning(
-                "\nIt seems like there is an error handler registered."
-                . "\nIn some cases this can prevent the precompiling to run properly."
-                . "\nAn ErrorHandler might raise an exception for a PHP Warning."
-            );
-        }
-        restore_error_handler();
-
         // Get arguments and options
         $extension = $input->getArgument('extension');
         $fail = $input->getOption('fail');
         $onlyFailed = $input->getOption('show-only-failed');
         $limit = $input->getOption('limit');
+        $disableErrorHandlers = $input->getOption('disable-error-handler');
+
+        // Test exception handlers
+        if (set_error_handler(function() {}) && !$disableErrorHandlers) {
+            $outputHelper->warning(
+                "\nIt seems like there is an error handler registered."
+                . "\nIn some cases this can prevent the precompiling to run properly."
+                . "\nAn ErrorHandler might raise an exception for a PHP Warning."
+            );
+
+            restore_error_handler();
+        }
 
         $result = $this->getPrecompilerService()->warmup($extension);
 
@@ -127,6 +135,10 @@ class FluidTemplatePrecompileCommand extends Command
                     $templateRows
                 );
             }
+        }
+
+        if ($disableErrorHandlers) {
+            restore_error_handler();
         }
 
         if ($fail && $uncompilable > 0) {
