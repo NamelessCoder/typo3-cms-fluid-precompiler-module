@@ -25,11 +25,11 @@ class FluidTemplatePrecompileCommand extends Command
     protected function configure()
     {
         $this
-            ->setDescription('Precompile Fluid templates')
+            ->setDescription('Precompile a Fluid resource')
             ->addArgument(
                 'extension',
                 InputArgument::OPTIONAL,
-                'Extension key of which the fluid template should be compiled, leave empty to compile all',
+                'Extension key of which the Fluid resources should be compiled. Leave empty to compile all',
                 null
             )
             ->addOption(
@@ -42,20 +42,20 @@ class FluidTemplatePrecompileCommand extends Command
                 'show-only-failed',
                 null,
                 InputOption::VALUE_NONE,
-                'Show only failed fluid templates from compiling. Only in conjunction with -v'
+                'Show only failed Fluid templates which failed to compile (in conjunction with -v)'
             )
             ->addOption(
                 'limit',
                 'l',
                 InputOption::VALUE_REQUIRED,
-                'Limit of template files of each extension shown. Only in conjunction with -v',
+                'Limit template information shown of each extension (in conjunction with -v)',
                 5
             )
             ->addOption(
                 'disable-error-handler',
                 null,
                 InputOption::VALUE_NONE,
-                'Temporary disable any registered error handler for compiling'
+                'Temporarily disable any registered error handler for compiling'
             );
     }
 
