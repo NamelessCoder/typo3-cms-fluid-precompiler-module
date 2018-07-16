@@ -2,10 +2,10 @@
     "name": "namelesscoder/typo3-cms-fluid-precompiler-module",
     "type": "typo3-cms-extension",
     "require": {
-        "typo3/cms-backend": "^8.7",
-        "typo3/cms-core": "^8.7",
-        "typo3/cms-extbase": "^8.7",
-        "typo3/cms-fluid": "^8.7",
+        "typo3/cms-backend": "^8.7 || ^9",
+        "typo3/cms-core": "^8.7 || ^9",
+        "typo3/cms-extbase": "^8.7 || ^9",
+        "typo3/cms-fluid": "^8.7 || ^9",
         "typo3fluid/fluid": "^2.3"
     },
     "autoload": {
