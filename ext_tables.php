@@ -15,7 +15,7 @@ if ('BE' === TYPO3_MODE) {
             ),
             array(
                 'access' => 'user,group',
-                'icon' => 'EXT:cms_fluid_precompiler_module/ext_icon.svg',
+                'icon' => 'EXT:cms_fluid_precompiler_module/Resources/Public/Icons/Extension.svg',
                 'labels' => 'LLL:EXT:cms_fluid_precompiler_module/Resources/Private/Language/locallang.xlf'
             )
         );
