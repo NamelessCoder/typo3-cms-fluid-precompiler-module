@@ -16,5 +16,11 @@ return [
     ],
     'referenceindex:update' => [
         'class' => \TYPO3\CMS\Backend\Command\ReferenceIndexUpdateCommand::class
+    ],
+    'fluidprecompile:compile' => [
+        'class' => \NamelessCoder\CmsFluidPrecompilerModule\Command\FluidTemplatePrecompileCommand::class
+    ],
+    'fluidprecompile:profile' => [
+        'class' => \NamelessCoder\CmsFluidPrecompilerModule\Command\FluidTemplateProfileCommand::class
     ]
 ];
