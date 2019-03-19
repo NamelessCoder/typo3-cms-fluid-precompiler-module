@@ -4,6 +4,8 @@ namespace NamelessCoder\CmsFluidPrecompilerModule\Service;
 use TYPO3\CMS\Core\SingletonInterface;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Extbase\Mvc\Controller\ControllerContext;
+use TYPO3\CMS\Extbase\Mvc\Web\Request;
 use TYPO3\CMS\Extbase\Object\ObjectManager;
 use TYPO3\CMS\Fluid\Core\Rendering\RenderingContext;
 use TYPO3Fluid\Fluid\Core\Parser\SyntaxTree\ArrayNode;
@@ -20,6 +22,7 @@ use TYPO3Fluid\Fluid\Core\Parser\ParsingState;
 use TYPO3Fluid\Fluid\Core\Parser\SyntaxTree\NodeInterface;
 use TYPO3Fluid\Fluid\Core\Parser\SyntaxTree\ViewHelperNode;
 use TYPO3Fluid\Fluid\View\Exception\InvalidTemplateResourceException;
+use TYPO3Fluid\Fluid\View\TemplateView;
 use TYPO3Fluid\Fluid\ViewHelpers\SectionViewHelper;
 
 /**
@@ -339,8 +342,26 @@ class FluidPrecompilerService implements SingletonInterface
      */
     protected function getRenderingContext($extensionKey): RenderingContextInterface
     {
-        $context = GeneralUtility::makeInstance(ObjectManager::class)->get(RenderingContext::class);
+        $objectManager = GeneralUtility::makeInstance(ObjectManager::class);
+
+        $context = $objectManager->get(RenderingContext::class);
+        $view = $objectManager->get(TemplateView::class);
+        $request = $objectManager->get(Request::class);
+        $controllerContext = $objectManager->get(ControllerContext::class);
+
+        $view->setRenderingContext($context);
+
         $context->getTemplatePaths()->fillDefaultsByPackageName($extensionKey);
+        $context->getViewHelperVariableContainer()->setView($view);
+
+        $request->setControllerName('Compile');
+        $request->setControllerActionName('compile');
+        $request->setControllerExtensionName('CmsFluidPrecompilerModule');
+        $request->setControllerVendorName('NamelessCoder');
+
+        $controllerContext->setRequest($request);
+
+        $context->setControllerContext($controllerContext);
         return $context;
     }
 
