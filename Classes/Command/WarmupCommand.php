@@ -114,7 +114,9 @@ class WarmupCommand extends Command
 
         if ($failOnUncompilable && !empty($uncompilable)) {
             $output->write('Failures:', true);
-            $output->write('  ' . $uncompilable, true);
+            foreach ($uncompilable as $line) {
+                $output->write('  ' . $line, true);
+            }
             return 1;
         }
         return 0;
