@@ -8,6 +8,7 @@ use TYPO3\CMS\Extbase\Mvc\Controller\ControllerContext;
 use TYPO3\CMS\Extbase\Mvc\Web\Request;
 use TYPO3\CMS\Extbase\Object\ObjectManager;
 use TYPO3\CMS\Fluid\Core\Rendering\RenderingContext;
+use TYPO3Fluid\Fluid\Core\Compiler\StopCompilingChildrenException;
 use TYPO3Fluid\Fluid\Core\Parser\SyntaxTree\ArrayNode;
 use TYPO3Fluid\Fluid\Core\Parser\SyntaxTree\BooleanNode;
 use TYPO3Fluid\Fluid\Core\Parser\SyntaxTree\EscapingNode;
@@ -75,6 +76,11 @@ class FluidPrecompilerService implements SingletonInterface
         $source = file_get_contents($templatePathAndFilename);
         $parsedTemplate = $context->getTemplateParser()->parse($source);
         $layoutName = $parsedTemplate->hasLayout() ? $parsedTemplate->getLayoutName($context) : null;
+        try {
+            $layoutFilename = $layoutName ? $context->getTemplatePaths()->getLayoutPathAndFilename($layoutName) : null;
+        } catch (InvalidTemplateResourceException $exception) {
+            $layoutFilename = null;
+        }
         $helpers = $this->collectViewHelperUsages($parsedTemplate, $context);
         return [
             'source' => $source,
@@ -83,7 +89,7 @@ class FluidPrecompilerService implements SingletonInterface
             'compilable' => $parsedTemplate->isCompilable(),
             'nodes' => $parsedTemplate->countNodeStack(),
             'layoutName' => $layoutName,
-            'layoutFilename' => $layoutName ? $context->getTemplatePaths()->getLayoutPathAndFilename($layoutName) : null,
+            'layoutFilename' => $layoutFilename,
             'fanouts' => $this->collectRenderedPartialNames($parsedTemplate, $context),
             'sections' => $this->collectDefinedSectionNames($parsedTemplate, $context),
             'helpers' => $helpers,
@@ -122,6 +128,7 @@ class FluidPrecompilerService implements SingletonInterface
             $node = $node->getNode();
             $escaped = true;
         }
+
         if ($node instanceof ViewHelperNode) {
             $identifier = $node->getViewHelperClassName();
             if (!isset($usages[$identifier])) {
@@ -141,17 +148,27 @@ class FluidPrecompilerService implements SingletonInterface
                     $usages[$identifier]['compilable'] = true;
                     $usages[$identifier]['efficiency'] = $efficiency;
                 } catch (StopCompilingException $exception) {
-                    $usages[$identifier]['compilable'] = false;
                     // Uncompilable ViewHelpers automatically detract so much from performance that the result is always below zero.
+                    $usages[$identifier]['compilable'] = false;
                     $usages[$identifier]['efficiency'] = -100000000;
+                } catch (StopCompilingChildrenException $exception) {
+                    // Uncompilable child nodes means VH is compiling nodes internally; hip-shot verdict of "1" as efficiency.
+                    $usages[$identifier]['compilable'] = true;
+                    $usages[$identifier]['efficiency'] = 1;
+                } catch (InvalidTemplateResourceException $exception) {
+                    // Edge-case: something is rendered inside f:cache.static which is the only VH known to evaluate nodes during compiling.
+                    $usages[$identifier]['compilable'] = true;
+                    $usages[$identifier]['efficiency'] = 1;
                 }
             }
             ++ $usages[$identifier]['usages'];
         }
+
         $nodes = $node->getChildNodes();
         foreach ($nodes as $childNode) {
             $usages = $this->collectViewHelpersAndUsageCountsFromNodeStack($childNode, $renderingContext, $usages);
         }
+
         return $usages;
     }
 
@@ -255,6 +272,10 @@ class FluidPrecompilerService implements SingletonInterface
             } else {
                 return [$argumentsNode->getObjectPath() => ['type' => 'Invalid', 'source' => 'Likely template error!']];
             }
+        } elseif (is_array($argumentsNode)) {
+            return $argumentsNode;
+        } elseif (!$argumentsNode instanceof ArrayNode) {
+            return [];
         }
         foreach ($argumentsNode->getInternalArray() as $name => $argumentNode) {
             if ($argumentNode instanceof TextNode) {
@@ -374,3 +395,4 @@ class FluidPrecompilerService implements SingletonInterface
         return count($results) - array_sum(array_column($results, 'compilable'));
     }
 }
+
