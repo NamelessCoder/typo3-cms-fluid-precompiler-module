@@ -1,4 +1,4 @@
-<?php declare(strict_types=1);
+<?php
 
 namespace NamelessCoder\CmsFluidPrecompilerModule\Controller;
 
@@ -14,9 +14,11 @@ use TYPO3\CMS\Extbase\Object\ObjectManager;
 class FluidPrecompileController
 {
     /**
-     * @return void
+     * @param ServerRequestInterface|null $request
+     * @param ResponseInterface|null $response
+     * @return ResponseInterface
      */
-    public function precompileAction(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
+    public function precompileAction(ServerRequestInterface $request = null, ResponseInterface $response = null)
     {
         GeneralUtility::makeInstance(ObjectManager::class)->get(FluidPrecompilerService::class)->warmup();
 
