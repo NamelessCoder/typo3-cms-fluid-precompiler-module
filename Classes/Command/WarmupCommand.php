@@ -61,7 +61,7 @@ class WarmupCommand extends Command
         foreach ($extensionKeys as $extensionKey) {
             $output->write($extensionKey . ':');
             $results = $service->warmup($extensionKey)[$extensionKey];
-            $numberOfTemplates = count($results['results']) ?: 0;
+            $numberOfTemplates = count($results['results'] ?? []);
 
             if ($numberOfTemplates === 0) {
                 $output->write(' ' . 0, true);
