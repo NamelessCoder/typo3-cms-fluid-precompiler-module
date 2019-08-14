@@ -16,7 +16,7 @@ class FluidPrecompileController
     /**
      * @param ServerRequestInterface|null $request
      * @param ResponseInterface|null $response
-     * @return ResponseInterface
+     * @return ResponseInterface|null
      */
     public function precompileAction(ServerRequestInterface $request = null, ResponseInterface $response = null)
     {
