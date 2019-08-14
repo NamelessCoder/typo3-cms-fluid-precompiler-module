@@ -1,4 +1,5 @@
 <?php
+
 namespace NamelessCoder\CmsFluidPrecompilerModule\ClearCacheMenu;
 
 use TYPO3\CMS\Backend\Routing\UriBuilder;
